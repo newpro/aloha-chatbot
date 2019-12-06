@@ -1,6 +1,8 @@
 # aloha-chatbot
 offical repo for AAAI ALOHA chatbot
 
+**ALOHA: Artificial Learning of Human Attributes for Dialogue Agents**
+
 Link to the [paper](https://arxiv.org/abs/1910.08293).
 
 ## Hello there researcher!
