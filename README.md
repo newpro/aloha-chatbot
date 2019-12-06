@@ -13,6 +13,8 @@ Notice that the model is a ranker. The response is simply the sentence ranked at
 
 ### HLA loading
 
+![five_chars](five_chars.png)
+
 We load Sheldon with the follow HLAs:
 1.	jerkass.
 2.	lack of empathy.
