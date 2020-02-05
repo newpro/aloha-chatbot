@@ -185,7 +185,7 @@ class CharCluster:
         self.mw = matrix_wrapper
         logger.info('CLUSTER: Lock target {}'.format(target))
 
-    def _expand(self, l1, l2, aco, weighted, log_scale):
+    def _expand(self, l1, l2, aco, weighted, log_scale, limits):
         """Communities expand from target as center by two levels. For details, refer to paper and docs.
 
         Returns:
@@ -200,7 +200,8 @@ class CharCluster:
         logger.info('Level 1 total {}'.format(len(level1)))
         for char1, _ in level1:
             for char2, _ in self.mw.get_similar(char1, feature=False, top_n=l2):
-                counter[char2] += 1
+                if (limits is not None) and (char2 in limits):
+                    counter[char2] += 1
 
         # build positive / negative character set
         _pos, _neg = [], []
@@ -219,13 +220,30 @@ class CharCluster:
                 _neg.append((char_id, freq, score,))
         return _pos, _neg
 
-    def retrieve(self, config: ClusterConfig):
+    def retrieve(self, config: ClusterConfig, limits=None):
+        """Retrieve positive and negative characters to target.
+
+        Args:
+            config: cluster config instance. Provides parameter for community cluster.
+            limits: set of character ids, default none (consider all).
+                Only those characters will be consider in return results.
+                This is useful for control dialog selection from subset of characters and only in training.
+
+        Returns:
+            Positive and negative set of character ids.
+            Each element follows format: (character id,
+        """
         l1 = config.l1 if config.l1 is not None else self.mw.m1_count
         l1 = min(int(float(self.mw.m1_count) * config.perc_cutoff / 100), l1)
         l2 = config.l2 if config.l2 is not None else self.mw.m1_count
         logger.info('Considering {} out of L1: {}, L2 {} top ranked characters.'.format(l1, l2, self.mw.m1_count))
 
-        positives, negatives = self._expand(l1, l2, config.aco, config.weighted, config.log_scale)
+        # convert elements in limits to category
+        _limits = set()
+        for e in limits:
+            _limits.add(self.mw.convert(e, to_category=True, feature=False))
+
+        positives, negatives = self._expand(l1, l2, config.aco, config.weighted, config.log_scale, limits=_limits)
         return positives, negatives
 
 
