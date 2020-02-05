@@ -247,6 +247,25 @@ class DialogData(CSVData):
 class HLAData(CSVData):
     COLs = 'feature,char_id,work,char_name'.split(',')
 
+    def char_note(self, char_id):
+        """Return a human readable text to represent the character for the character ID.
+
+        Args:
+            char_id: id of the characters.
+
+        Returns:
+            A human readable string represents the character.
+        """
+        if char_id in self._char_note_cache:
+            return self._char_note_cache[char_id]
+        _select = self.data.loc[self.data.char_id == char_id]
+        if len(_select) == 0:  # not enough feature
+            self._char_note_cache[char_id] = 'Minor character (Not enough feature)'
+        else:
+            _first = _select.iloc[0]  # all rows are for the same character, first row will do
+            self._char_note_cache[char_id] = '[{}] {} ({})'.format(_first.work, _first.char_name, char_id)
+        return self._char_note_cache[char_id]
+
     def __init__(self, files=BasicConfig.F_HLAs, filter_duplicate=False):
         """Load HLA data.
 
@@ -268,7 +287,12 @@ class HLAData(CSVData):
         self.reproduce_check(BasicConfig.F_HLAs_Length)
         self.data_report()
 
+        # speed up char_note function operation.
+        # key: character id, value: human readable note.
+        self._char_note_cache = {}
+
 
 # sample usage
 # d = HLAData(filter_duplicate=True)
 # print(d.data)
+# print(d.char_note('l4390'))  # what is l4390? (Sheldon)

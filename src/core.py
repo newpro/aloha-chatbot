@@ -104,7 +104,7 @@ class DataManager:
         self.train_heads = train_heads[
             train_heads.groupby('head_text')['head_text'].transform('count').ge(head_count_ge)]
 
-        self._sanity_report()
+        self._sanity_report()  # perform sanity checks and report
 
 
 # sample usage for fold 1 (Sheldon)
