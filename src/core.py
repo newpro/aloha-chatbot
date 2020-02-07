@@ -90,8 +90,7 @@ class DataManager:
                  target, test_shows,
                  dialog_data=None,
                  head_data=None,
-                 hla_data=None,
-                 head_count_ge=5):
+                 hla_data=None):
         """Build data manager.
 
         Args:
@@ -134,12 +133,6 @@ class DataManager:
         self._pos = None
         self._neg = None
         self.state = 'train'
-
-        # build head data for training
-        # _sents = set(self.train_dialogs.index.values)
-        # train_heads = self.hd.data.loc[self.hd.data.sent_id.isin(_sents)]
-        # self.train_heads = train_heads[
-        #     train_heads.groupby('head_text')['head_text'].transform('count').ge(head_count_ge)]
 
         self._sanity_report()  # perform sanity checks and report
 
