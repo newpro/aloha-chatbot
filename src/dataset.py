@@ -2,8 +2,10 @@
 """
 # core library
 import os
+import re
 import hashlib
 import pandas as pd
+import random
 from logzero import logger
 from typing import Optional
 
@@ -201,7 +203,7 @@ class CSVData:
 class DialogHeadData(CSVData):
     COLs = 'sent_id,show_id,char_name,char_id,head_info,head_pos,token,token_par,position,is_stop,head_text'.split(',')
 
-    def __init__(self, file_info: Optional[FileInfo] = BasicConfig.F_DialogHead):
+    def __init__(self, file_info: Optional[FileInfo] = BasicConfig.F_DialogHead, exclude_shows=None):
         super().__init__([file_info], debug_head='Dialog Head')
 
         self._load()
@@ -210,6 +212,11 @@ class DialogHeadData(CSVData):
         self.reproduce_check(file_info.reproduce_length)
         self.data_report(['sent_id', 'head_text'])
 
+        if exclude_shows:
+            self.data = self.data.loc[~self.data['show_id'].isin(exclude_shows)]
+            logger.info('REPORT: after exclude shows: {}'.format(exclude_shows))
+            self.clean(high_passes=[('head_text', 5)], silent_high_pass=True)
+            self.data_report(['sent_id', 'head_text'])
 
 # usage
 # d = DialogHeadData()
@@ -227,6 +234,10 @@ class DialogData(CSVData):
         """
         super().__init__([file_info], debug_head='Dialog')
         self._load()
+
+        # WARNING: do not shuffle this dataset!
+        # The index of the dialog sentence has to match sent_id in dialog head
+        # TODO: add an enforcement to prevent shuffle
 
         # clean the data a bit
         # Note: the character Rebekah Mikaelson (l20098) exists in both shows: TheVampireDiaries and TheOriginals
@@ -247,6 +258,20 @@ class DialogData(CSVData):
 class HLAData(CSVData):
     COLs = 'feature,char_id,work,char_name'.split(',')
 
+    def get_hlas(self, char_id, amount=4, draw='random'):
+        if draw != 'random':  # TODO: implement other options in next release
+            raise NotImplementedError('other options implement in next release')
+        # TODO: add weight shock, and culture shock in the next release
+        if char_id not in self._char_hla_cache:  # retrieve for the first time
+            self._char_hla_cache[char_id] = list(self.data.loc[self.data.char_id==char_id].feature.unique())
+            if self.decouple_hla:
+                # break to words, credit: https://stackoverflow.com/questions/5020906
+                self._char_hla_cache[char_id] = [
+                    re.sub(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))', r' \1', e).lower()
+                    for e in self._char_hla_cache[char_id]]
+        _hlas = self._char_hla_cache[char_id]
+        return random.sample(_hlas, min(amount, len(_hlas)))
+
     def char_note(self, char_id):
         """Return a human readable text to represent the character for the character ID.
 
@@ -266,7 +291,8 @@ class HLAData(CSVData):
             self._char_note_cache[char_id] = '[{}] {} ({})'.format(_first.work, _first.char_name, char_id)
         return self._char_note_cache[char_id]
 
-    def __init__(self, files=BasicConfig.F_HLAs, filter_duplicate=False):
+    def __init__(self, files=BasicConfig.F_HLAs,
+                 filter_duplicate=False, decouple_hla=True):
         """Load HLA data.
 
         Args:
@@ -274,6 +300,8 @@ class HLAData(CSVData):
                 The reason this is false are two: matrix factor model handle this case,
                 in addition, the duplication indicates repeat features recorded on page. Higher confidence is given.
                 You can disable this for your experiment.
+            decouple_hla: the output format of character hla is decoupled for both human and machine readability.
+                E.g., TheHeart -> the heart
         """
         super().__init__(files, debug_head='HLA data')
         self._load()
@@ -285,11 +313,16 @@ class HLAData(CSVData):
         if filter_duplicate:
             self.data.drop_duplicates(['feature', 'char_id'], keep='first', inplace=True)
         self.reproduce_check(BasicConfig.F_HLAs_Length)
+        self.decouple_hla = decouple_hla
         self.data_report()
 
         # speed up char_note function operation.
         # key: character id, value: human readable note.
         self._char_note_cache = {}
+
+        # speed up drawing character hlas
+        # key: char_id, value: list of all character hla.
+        self._char_hla_cache = {}
 
 
 # sample usage

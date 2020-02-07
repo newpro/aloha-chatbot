@@ -104,7 +104,7 @@ class MatrixWrapper:
         _model.fit(self.coo * train_config.conf_scale)
         self.model = _model
 
-    def convert(self, value, to_category=True, feature=False):
+    def convert(self, value, to_category=True, feature=False, raising=True):
         _map = None
         if to_category:  # id -> category
             if feature:  # get feature
@@ -120,8 +120,11 @@ class MatrixWrapper:
         try:
             res = _map[value]
         except KeyError:
-            logger.warn('DEBUG MAP: {}'.format(_map))
-            raise KeyError('Map does not exists for value: {}'.format(value))
+            if raising:
+                logger.warn('DEBUG MAP: {}'.format(_map))
+                raise KeyError('Map does not exists for value: {}'.format(value))
+            else:
+                return None
         return res
 
     def get_similar(self, id_, top_n: Optional[int] = None, feature=False, convert_back=True):
@@ -137,20 +140,24 @@ class MatrixWrapper:
                 However, this would slow down operations if you have additional pipelines attached using categories.
 
         Returns:
-            List of items, each item has format (category_id, confidence) or (item_id, confidence) depend on
+            List of items, each item has format (item_category_id, confidence) or (item_id, confidence) depend on
                 convert_back variable.
         """
         assert type(feature) is bool, 'feature indicates if feature or object is used, must be boolean.'
         if not self.model:
             raise Exception('Model has not been trained yet (call get_train first)')
-        cat = self.convert(id_, feature=feature, to_category=True)
-        if feature:
-            res = self.model.similar_items(cat, N=top_n)
-        else:
-            res = self.model.similar_users(cat, N=top_n)
-        if convert_back:
-            return [(self.convert(e[0], to_category=False, feature=feature), e[1]) for e in res]
-        return res
+        cat = self.convert(id_, feature=feature, to_category=True, raising=False)
+        # TODO: a potential problem is not capturing when user misuse this API. Fix it in next release.
+        if cat:
+            if feature:
+                res = self.model.similar_items(cat, N=top_n)
+            else:
+                res = self.model.similar_users(cat, N=top_n)
+            if convert_back:
+                return [(self.convert(e[0], to_category=False, feature=feature), e[1]) for e in res]
+            return res
+        else:  # possibly the entry is filtered out due to low feature count.
+            return []
 
     def inspect(self, id_, top_n=20, feature=False, readable_fn=None):
         if feature:
@@ -189,7 +196,7 @@ class CharCluster:
         """Communities expand from target as center by two levels. For details, refer to paper and docs.
 
         Returns:
-            positive characters: set of character id for positives.
+            positive characters: list of character id for positives, format: (character id, freq, score).
             negative characters: set of character id for negatives.
         """
         # level 2 holder. Key: candidate category id; value: (freq, score)
@@ -200,12 +207,12 @@ class CharCluster:
         logger.info('Level 1 total {}'.format(len(level1)))
         for char1, _ in level1:
             for char2, _ in self.mw.get_similar(char1, feature=False, top_n=l2):
-                if (limits is not None) and (char2 in limits):
+                if limits and (char2 in limits):
                     counter[char2] += 1
 
         # build positive / negative character set
-        _pos, _neg = [], []
-        print(counter)
+        _pos, _neg = [], set()
+        # print(counter)
         logger.info('Level 2 total {}'.format(len(counter)))
         for char_id, freq in counter.most_common():
             score = 1
@@ -217,7 +224,7 @@ class CharCluster:
             if freq >= aco:
                 _pos.append((char_id, freq, score,))
             else:
-                _neg.append((char_id, freq, score,))
+                _neg.add(char_id)
         return _pos, _neg
 
     def retrieve(self, config: ClusterConfig, limits=None):
@@ -230,20 +237,25 @@ class CharCluster:
                 This is useful for control dialog selection from subset of characters and only in training.
 
         Returns:
-            Positive and negative set of character ids.
-            Each element follows format: (character id,
+            positive characters: list of character id for positives, format: (character id, freq, score).
+            negative characters: set of character id for negatives.
         """
+        # TODO: making the limit a required argument. Fix in next release.
+        #  There is possibility that user forget to pass this in, which would result in mix of train/test.
+        #  But if enforced, can not be easily debug and experimented, so possibly should add a "production lock".
         l1 = config.l1 if config.l1 is not None else self.mw.m1_count
         l1 = min(int(float(self.mw.m1_count) * config.perc_cutoff / 100), l1)
         l2 = config.l2 if config.l2 is not None else self.mw.m1_count
         logger.info('Considering {} out of L1: {}, L2 {} top ranked characters.'.format(l1, l2, self.mw.m1_count))
 
         # convert elements in limits to category
-        _limits = set()
-        for e in limits:
-            _limits.add(self.mw.convert(e, to_category=True, feature=False))
+        # _limits = set()
+        # for e in limits:
+        #     _cid = self.mw.convert(e, to_category=True, feature=False, raising=False)
+        #     if _cid:  # if not filtered out
+        #         _limits.add(_cid)
 
-        positives, negatives = self._expand(l1, l2, config.aco, config.weighted, config.log_scale, limits=_limits)
+        positives, negatives = self._expand(l1, l2, config.aco, config.weighted, config.log_scale, limits=limits)
         return positives, negatives
 
 

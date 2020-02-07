@@ -101,6 +101,9 @@ class BasicConfig:
               FileInfo('char_features_animated.csv', '6fed284b6e7b1133096efef55cf1a451')]
     F_HLAs_Length = 945519  # reproduce length
 
+    # output files
+    Output_Path = '/home/kits-adm/Workspace/play/tmp'
+
 
 # Configuration for hla matrix factorization training
 # this configuration should achieve 25% in wild setting (reported on paper), 45% on cleaned setting (experimental)
@@ -112,4 +115,9 @@ HLA_TRAIN_CONFIG = MatrixTrainingConfig(
 
 HLA_CLUSTER_CONFIG = ClusterConfig(
     perc_cutoff=10, level2_limit=30, acceptable_overlap=10, weighted=False,
+)
+
+SENT_NEIGHBOUR_CONFIG = MatrixTrainingConfig(
+    top_n=200, conf_scale=30, regularization=0.1, iterations=200,
+    factor=30,
 )
