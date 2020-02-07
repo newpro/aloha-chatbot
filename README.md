@@ -1,17 +1,43 @@
 # aloha-chatbot
-offical repo for AAAI ALOHA chatbot
+Official repo for AAAI publication: ALOHA chatbot
 
 **ALOHA: Artificial Learning of Human Attributes for Dialogue Agents**
 
 Link to the [paper](https://arxiv.org/abs/1910.08293).
 
-## Hello there researcher!
-We uploaded code we used in this research as messy version for early release. We are currently updating our documentations, dataset, and codebase to be more readable and understandable for all researchers! We will finish the update by Feb 2020 for AAAI 2020 conference. At the same time stay tuned, and star the repo to follow the changes!
+## Overview
+
+The ALOHA project's objective is to mimic what a fictional character should talk alike. Unlike other models, ALOHA sees zero of the target character's dialog and train purely based on fictional character attributes. Those attributes much close to describing humans in the real world, therefore arguably generate more realistic and in-depth compare to other chit-chat models.
+
+This repo, combined with our proposed dataset, can potentially mimic any dialog style of the 45K characters we provided. Besides, it gives you easy integration to [ParlAI](https://parl.ai/), which supports a wide range of models training. A combination of other models and use of your own data will be in a possible future release.
+
+## Quick Start
+
+* Download raw_data.zip from [server](https://cs.uwaterloo.ca/~jhoey/research/aloha/). Unzip to local data folder.
+* Change the BasicConfig.Data_Path in config.py file of your data folder.
+* Run sample.py. The file generate five fold training data that can be directly used in ParlAI to your home folder.
+* Train on ParlAI, there are a range of models you can choose from, our format is closer to [ConvAI2 tasks](https://parl.ai/docs/zoo.html#convai2-models). See document there. For our model reported on paper, we used Bi-encoder and Poly-encoder.
+
+Additional detailed document will be added in possible later release.
+
+## Current release: 0.1 Zoidberg
+
+![five_chars](curr_release.jpg)
+
+Version 0.1: Zoidberg is here! Trust him if you do not want to live!
+
+Sorry for the long waiting, all of our team members are currently working in industry or on other research projects. We release this version just in time for AAAI 2020.
+
+We release 0.1 version, Zoidberg, under "src" folder:
+
+* Clean and structured code for (almost) perfect reproduction. There are still some random factors in play, e.g., a random selection of candidate sentences, shuffle order. However, you should reproduce results with this code with almost equal accuracy reported on paper. To check on the exact and messy code we used in research, go to the "early_release" folder. For train on exact data we had in our research, rather than generate from this repo, you can download "parlai_training_data.zip" from [server](https://cs.uwaterloo.ca/~jhoey/research/aloha/).
+* Possible bugs may exist. If you spot one, report via git issues.
+* In this version, we dropped many features we had in original code and keep bear minimal for what we had on paper. In a possible future release, we will add more features and flexibilities for pipeline control and injection.
 
 ## System Demo
 
 This section records all interactions in addition to what we reported on the paper. **No cherry picking**.
-Notice that the model is a ranker. The response is simply the sentence ranked at number 1 position for 80k sentences randomly drawn from our dataset. We release the 80k sentence samples with our dataset.
+Notice that the model is a ranker. The response is simply the sentence ranked at the number 1 position for 80k sentences randomly drawn from our dataset. We release the 80k sentence samples with our dataset.
 
 ### HLA loading
 
@@ -80,7 +106,6 @@ We load Marge with the following HLAs:
 | Marge: I think you cannot have a party. Your mother left me in charge. |
 
 #### Identity and opinion questions
-
 
 | Input: Who are you? |
 |:-------------|
