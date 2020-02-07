@@ -7,6 +7,8 @@ Link to the [paper](https://arxiv.org/abs/1910.08293).
 
 ## Overview
 
+![intro](intro.png)
+
 The ALOHA project's objective is to mimic what a fictional character should talk alike. Unlike other models, ALOHA sees zero of the target character's dialog and train purely based on fictional character attributes. Those attributes much close to describing humans in the real world, therefore arguably generate more realistic and in-depth compare to other chit-chat models.
 
 This repo, combined with our proposed dataset, can potentially mimic any dialog style of the 45K characters we provided. Besides, it gives you easy integration to [ParlAI](https://parl.ai/), which supports a wide range of models training. A combination of other models and use of your own data will be in a possible future release.
@@ -22,7 +24,7 @@ Additional detailed document will be added in possible later release.
 
 ## Current release: 0.1 Zoidberg
 
-![five_chars](curr_release.jpg)
+![curr_release](curr_release.jpg)
 
 Version 0.1: Zoidberg is here! Trust him if you do not want to live!
 
