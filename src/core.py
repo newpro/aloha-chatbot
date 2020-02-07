@@ -258,27 +258,27 @@ class DataManager:
 
         # Write training
         # For each positive character and all its dialogs, add 19 other candidates
-        # self.state = 'train'
-        # cnt = 0
-        # train_ptr = codecs.open(train_f, 'a+')
-        # valid_ptr = codecs.open(valid_f, 'a+')
-        # for cid, _, _ in self._pos:  # TODO: add weighted adjustment for both confidence and score
-        #     # fetch all its dialogs
-        #     cnt += 1
-        #     logger.info('Write train {}/{}: {}'.format(cnt, len(self._pos), self.hla.char_note(cid)))
-        #     gt_dialogs = self.train_dialogs.loc[self.train_dialogs.char_id == cid]
-        #     for gt in gt_dialogs.itertuples():
-        #         _hlas = self.hla.get_hlas(cid, amount=8, draw='random')
-        #         _cands = self._get_candidates(gt_id=gt.Index, sent_matrix=sent_mw,
-        #                                       sent_pool=sent_pool, candidate_count=20)
-        #
-        #         line = self._format_fb_line(hlas=_hlas, d1=gt.dia1, d2=gt.dia2, sentences=_cands)
-        #         if np.random.rand() < train_ratio:
-        #             train_ptr.write(line)
-        #         else:
-        #             valid_ptr.write(line)
-        # train_ptr.close()
-        # valid_ptr.close()
+        self.state = 'train'
+        cnt = 0
+        train_ptr = codecs.open(train_f, 'a+')
+        valid_ptr = codecs.open(valid_f, 'a+')
+        for cid, _, _ in self._pos:  # TODO: add weighted adjustment for both confidence and score
+            # fetch all its dialogs
+            cnt += 1
+            logger.info('Write train {}/{}: {}'.format(cnt, len(self._pos), self.hla.char_note(cid)))
+            gt_dialogs = self.train_dialogs.loc[self.train_dialogs.char_id == cid]
+            for gt in gt_dialogs.itertuples():
+                _hlas = self.hla.get_hlas(cid, amount=8, draw='random')
+                _cands = self._get_candidates(gt_id=gt.Index, sent_matrix=sent_mw,
+                                              sent_pool=sent_pool, candidate_count=20)
+
+                line = self._format_fb_line(hlas=_hlas, d1=gt.dia1, d2=gt.dia2, sentences=_cands)
+                if np.random.rand() < train_ratio:
+                    train_ptr.write(line)
+                else:
+                    valid_ptr.write(line)
+        train_ptr.close()
+        valid_ptr.close()
 
         # Write testing
         self.state = 'test'

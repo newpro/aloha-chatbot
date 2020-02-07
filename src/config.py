@@ -17,16 +17,16 @@ class MatrixTrainingConfig:
                  conf_scale: int, factor: int, regularization: float, iterations: int,
                  random_state: Optional[int] = None, safe_pass: Optional[float] = None,
                  train_percentage: Optional[float] = 0.7):
-        """Init Matrix config
+        """Init Matrix config.
 
         Args:
             top_n: testing evaluation of top n retrieval.
             conf_scale: scale up the matrix with a confidence integer.
-            factor:
+            factor: matrix factor.
             regularization: matrix regularization.
             iterations: perform a fixed amount of iterations before testing.
             random_state: Optional. To fix the result for reproduction.
-            safe_pass: per
+            safe_pass: raise error if the top n recall can not pass this amount.
         """
         self.top_n = top_n
         self.conf_scale = conf_scale
@@ -113,10 +113,13 @@ HLA_TRAIN_CONFIG = MatrixTrainingConfig(
     safe_pass=0.2,
 )
 
+# for community cluster for characters
 HLA_CLUSTER_CONFIG = ClusterConfig(
     perc_cutoff=10, level2_limit=30, acceptable_overlap=10, weighted=False,
 )
 
+# for training sentence neighborhood
+# you can reduce iteration to 40 if you do not want to wait
 SENT_NEIGHBOUR_CONFIG = MatrixTrainingConfig(
     top_n=200, conf_scale=30, regularization=0.1, iterations=200,
     factor=30,
