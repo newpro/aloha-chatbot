@@ -33,7 +33,7 @@ class MatrixWrapper:
     def _to_coo(self, data):
         cat1 = data[self.col1].astype('category')
         cat2 = data[self.col2].astype('category')
-        coo = coo_matrix((np.ones(data.shape[0]), (cat2.cat.codes.copy(), cat1.cat.codes.copy())))
+        coo = coo_matrix((np.ones(data.shape[0]), (cat1.cat.codes.copy(), cat2.cat.codes.copy())))
         return coo, cat1, cat2
 
     def __init__(self, dataset: CSVData, col1, col2):
@@ -86,12 +86,12 @@ class MatrixWrapper:
             else:
                 assert len(test_df) > 0
                 train_csr = self.coo
-                test_csr = self._to_coo(test_df)
+                test_csr, _, _ = self._to_coo(test_df)
             _model = implicit.als.AlternatingLeastSquares(factors=train_config.factor,
                                                           regularization=train_config.regularization,
                                                           iterations=train_config.iterations)
             _model.fit(train_csr * train_config.conf_scale)
-            prec = precision_at_k(_model, train_csr.T, test_csr.T, K=train_config.top_n)
+            prec = precision_at_k(_model, train_csr, test_csr, K=train_config.top_n)
             logger.warning('ACCURACY REPORT at top {}: {:.5f}%'.format(train_config.top_n, prec * 100))
             if train_config.safe_pass:
                 assert prec > train_config.safe_pass
@@ -154,7 +154,7 @@ class MatrixWrapper:
             else:
                 res = self.model.similar_users(cat, N=top_n)
             if convert_back:
-                return [(self.convert(e[0], to_category=False, feature=feature), e[1]) for e in res]
+                return [(self.convert(e[0], to_category=False, feature=feature), e[1]) for e in np.column_stack(res)]
             return res
         else:  # possibly the entry is filtered out due to low feature count.
             return []
@@ -207,8 +207,10 @@ class CharCluster:
         logger.info('Level 1 total {}'.format(len(level1)))
         for char1, _ in level1:
             for char2, _ in self.mw.get_similar(char1, feature=False, top_n=l2):
-                if limits and (char2 in limits):
-                    counter[char2] += 1
+                # Only if limits has been declared and char2 not in set.
+                if limits and (char2 not in limits):
+                    continue
+                counter[char2] += 1
 
         # build positive / negative character set
         _pos, _neg = [], set()
